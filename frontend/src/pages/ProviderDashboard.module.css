@@ -1,0 +1,11 @@
+.page { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+.title { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.value { font-size: 28px; font-weight: 700; }
+.chart { margin-bottom: 24px; }
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid #1e3048; }
+.table td { padding: 10px 12px; border-bottom: 1px solid #1a2535; }
+.mono { font-family: monospace; font-size: 13px; }

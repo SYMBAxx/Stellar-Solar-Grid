@@ -1,0 +1,38 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: #111c27;
+  border-bottom: 1px solid #1e3048;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sun);
+}
+
+.links {
+  display: flex;
+  gap: 28px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.links a:hover { color: var(--text); }
+
+.wallet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.addr {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: monospace;
+}
