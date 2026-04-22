@@ -3,7 +3,7 @@ import { useWalletStore } from "../store/walletStore";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
-  const { address, connect, disconnect } = useWalletStore();
+  const { address, connect, disconnect, error, clearError } = useWalletStore();
 
   return (
     <nav className={styles.nav}>
@@ -31,6 +31,31 @@ export default function Navbar() {
           </button>
         )}
       </div>
+      {error && (
+        <div className={styles.toast}>
+          {error === "no_freighter" ? (
+            <>
+              Freighter wallet not found.{" "}
+              <a
+                href="https://freighter.app"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Install Freighter
+              </a>
+            </>
+          ) : (
+            "Wallet connection failed. Please try again."
+          )}
+          <button
+            className={styles.toastClose}
+            onClick={clearError}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </nav>
   );
 }
