@@ -28,6 +28,18 @@ meterRouter.get("/:id/access", async (req, res) => {
   }
 });
 
+/** GET /api/meters/owner/:address — list all meters for an owner (#32) */
+meterRouter.get("/owner/:address", async (req, res) => {
+  try {
+    const result = await contractQuery("get_meters_by_owner", [
+      StellarSdk.nativeToScVal(req.params.address, { type: "address" }),
+    ]);
+    res.json({ meters: StellarSdk.scValToNative(result) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** POST /api/meters — register a new meter (admin only) */
 meterRouter.post("/", async (req, res) => {
   const { meter_id, owner } = req.body as { meter_id: string; owner: string };
