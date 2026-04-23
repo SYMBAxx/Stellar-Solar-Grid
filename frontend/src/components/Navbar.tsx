@@ -18,6 +18,9 @@ export default function Navbar() {
         <Link href="/dashboard/user" className="text-sm text-gray-300 hover:text-white transition">
           My Meter
         </Link>
+        <Link href="/pay" className="text-sm text-gray-300 hover:text-white transition">
+          Pay
+        </Link>
         <Link
           href="/dashboard/provider"
           className="text-sm text-gray-300 hover:text-white transition"

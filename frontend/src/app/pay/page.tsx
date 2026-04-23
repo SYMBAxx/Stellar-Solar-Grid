@@ -1,0 +1,189 @@
+"use client";
+
+import { useState } from "react";
+import Navbar from "@/components/Navbar";
+import { useWalletStore } from "@/store/walletStore";
+import { makePayment } from "@/services/meterService";
+import { parseWalletError } from "@/lib/errors";
+
+type Plan = "Daily" | "Weekly" | "Usage";
+type Status = "idle" | "loading" | "success" | "error" | "cancelled";
+
+const PLANS: { value: Plan; label: string; desc: string }[] = [
+  { value: "Daily", label: "Daily", desc: "Billed every 24 hours" },
+  { value: "Weekly", label: "Weekly", desc: "Billed every 7 days" },
+  { value: "Usage", label: "Usage-Based", desc: "Pay per kWh consumed" },
+];
+
+export default function PayPage() {
+  const { address, connect } = useWalletStore();
+
+  const [meterId, setMeterId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [plan, setPlan] = useState<Plan>("Daily");
+  const [status, setStatus] = useState<Status>("idle");
+  const [message, setMessage] = useState("");
+  const [txHash, setTxHash] = useState("");
+
+  const EXPLORER_BASE = process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE?.includes("Test")
+    ? "https://stellar.expert/explorer/testnet/tx"
+    : "https://stellar.expert/explorer/public/tx";
+
+  async function handlePay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!address) return;
+
+    const amountNum = parseFloat(amount);
+    if (!meterId.trim() || isNaN(amountNum) || amountNum <= 0) return;
+
+    setStatus("loading");
+    setMessage("");
+    setTxHash("");
+
+    try {
+      const hash = await makePayment(address, meterId.trim(), amountNum, plan);
+      setTxHash(hash);
+      setStatus("success");
+      setMessage("Payment successful!");
+    } catch (err: unknown) {
+      const friendly = parseWalletError(err);
+      if (friendly === "Transaction cancelled by user.") {
+        setStatus("cancelled");
+      } else {
+        setStatus("error");
+      }
+      setMessage(friendly);
+    }
+  }
+
+  function reset() {
+    setStatus("idle");
+    setMessage("");
+    setTxHash("");
+  }
+
+  return (
+    <>
+      <Navbar />
+      <main className="min-h-screen flex items-start justify-center px-4 py-16">
+        <div className="w-full max-w-md">
+          <h1 className="text-3xl font-bold text-solar-yellow mb-2">Make a Payment</h1>
+          <p className="text-gray-400 text-sm mb-8">
+            Top up your meter balance on the Stellar blockchain.
+          </p>
+
+          {!address ? (
+            <div className="rounded-xl border border-white/10 bg-solar-accent p-8 text-center">
+              <p className="text-gray-400 mb-4">Connect your wallet to make a payment.</p>
+              <button
+                onClick={connect}
+                className="rounded-lg bg-solar-yellow px-6 py-2.5 font-semibold text-solar-dark hover:opacity-90 transition"
+              >
+                Connect Wallet
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={handlePay}
+              className="rounded-xl border border-white/10 bg-solar-accent p-6 space-y-5"
+            >
+              {/* Meter ID */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Meter ID
+                </label>
+                <input
+                  type="text"
+                  value={meterId}
+                  onChange={(e) => { setMeterId(e.target.value); reset(); }}
+                  placeholder="e.g. METER1"
+                  required
+                  className="w-full rounded-lg border border-white/10 bg-solar-dark px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-solar-yellow focus:outline-none transition"
+                />
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Amount (XLM)
+                </label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); reset(); }}
+                  placeholder="0.00"
+                  min="0.0000001"
+                  step="any"
+                  required
+                  className="w-full rounded-lg border border-white/10 bg-solar-dark px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-solar-yellow focus:outline-none transition"
+                />
+              </div>
+
+              {/* Plan */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Billing Plan
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PLANS.map((p) => (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => setPlan(p.value)}
+                      className={`rounded-lg border px-3 py-2.5 text-left transition ${
+                        plan === p.value
+                          ? "border-solar-yellow bg-solar-yellow/10 text-solar-yellow"
+                          : "border-white/10 text-gray-400 hover:border-white/30"
+                      }`}
+                    >
+                      <div className="text-xs font-semibold">{p.label}</div>
+                      <div className="text-[10px] opacity-70 mt-0.5">{p.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feedback */}
+              {status === "cancelled" && (
+                <div className="flex items-center gap-2 rounded-lg border border-yellow-500/40 bg-yellow-900/20 px-4 py-3 text-sm text-yellow-300">
+                  <span>⚠️</span>
+                  <span>{message}</span>
+                </div>
+              )}
+              {status === "error" && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+                  <span>✕</span>
+                  <span>{message}</span>
+                </div>
+              )}
+              {status === "success" && (
+                <div className="rounded-lg border border-green-500/40 bg-green-900/20 px-4 py-3 text-sm text-green-400">
+                  <div className="font-semibold mb-1">✓ {message}</div>
+                  {txHash && (
+                    <a
+                      href={`${EXPLORER_BASE}/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 underline underline-offset-2 font-mono text-xs hover:text-blue-300 transition"
+                    >
+                      {txHash.slice(0, 10)}…{txHash.slice(-8)} ↗
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full rounded-lg bg-solar-yellow py-3 font-semibold text-solar-dark hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {status === "loading" ? "Waiting for wallet…" : "Pay Now"}
+              </button>
+            </form>
+          )}
+        </div>
+      </main>
+    </>
+  );
+}
